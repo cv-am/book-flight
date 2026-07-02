@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Seat Selection — AIRBUS A320 · DEL → BOM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= LOADING SCREEN ================= -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-inner">
+    <svg class="loader-plane" width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <path d="M32 4 L36 28 L58 38 L58 42 L36 36 L36 50 L44 56 L44 59 L32 56 L20 59 L20 56 L28 50 L28 36 L6 42 L6 38 L28 28 Z" fill="url(#loaderGrad)"/>
+      <defs><linearGradient id="loaderGrad" x1="0" y1="0" x2="64" y2="64"><stop offset="0%" stop-color="#4F7CFF"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs>
+    </svg>
+    <div class="loader-label">PREPARING CABIN<span class="loader-dots"><i>.</i><i>.</i><i>.</i></span></div>
+    <div class="loader-track"><div class="loader-bar" id="loaderBar"></div></div>
+  </div>
+</div>
+
+<!-- ================= BACKGROUND ================= -->
+<div class="bg-layer" aria-hidden="true">
+  <div class="bg-grid"></div>
+  <div class="bg-stars" id="bgStars"></div>
+  <div class="bg-radar"></div>
+  <div class="bg-glow bg-glow-a"></div>
+  <div class="bg-glow bg-glow-b"></div>
+</div>
+<div class="cursor-spotlight" id="spotlight" aria-hidden="true"></div>
+
+<!-- ================= APP SHELL ================= -->
+<div class="app" id="app">
+
+  <!-- ============ LEFT COLUMN ============ -->
+  <aside class="col col-left" aria-label="Journey overview">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 9L22 12L14 14L12 22L10 14L2 12L10 9Z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text">SEAT SELECTION</span>
+    </div>
+
+    <h1 class="headline">Choose your<br><span class="headline-accent">perfect seat</span></h1>
+    <p class="subhead">Select your preferred seat and enjoy a journey built around you.</p>
+
+    <ol class="steps" aria-label="Booking progress">
+      <li class="step is-active" data-step="1">
+        <span class="step-dot">1</span>
+        <span class="step-label">Select Seats</span>
+      </li>
+      <li class="step" data-step="2">
+        <span class="step-dot">2</span>
+        <span class="step-label">Passenger Info</span>
+      </li>
+      <li class="step" data-step="3">
+        <span class="step-dot">3</span>
+        <span class="step-label">Payment</span>
+      </li>
+    </ol>
+
+    <div class="aircraft-card">
+      <div class="aircraft-card-icon" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M8 6V4.5a1.5 1.5 0 0 1 3 0V6M13 6V4.5a1.5 1.5 0 0 1 3 0V6" stroke="currentColor" stroke-width="1.4"/></svg>
+      </div>
+      <div class="aircraft-card-body">
+        <div class="aircraft-card-name">AIRBUS A320</div>
+        <div class="aircraft-card-meta"><span id="seatTotalMeta">180</span> Seats · <span id="rowTotalMeta">32</span> Rows</div>
+        <button class="aircraft-card-link" id="viewAircraftBtn">View aircraft <span aria-hidden="true">›</span></button>
+      </div>
+    </div>
+
+    <button class="help-link" id="helpBtn" aria-haspopup="dialog">
+      <span class="help-icon" aria-hidden="true">?</span> Need help?
+    </button>
+  </aside>
+
+  <!-- ============ CENTER COLUMN ============ -->
+  <main class="col col-center" aria-label="Aircraft seat map">
+    <div class="cabin-toolbar">
+      <div class="cabin-tabs" role="tablist" aria-label="Cabin class">
+        <button class="cabin-tab is-active" role="tab" aria-selected="true">Economy</button>
+        <button class="cabin-tab" role="tab" aria-selected="false">Premium</button>
+        <button class="cabin-tab" role="tab" aria-selected="false">Business</button>
+      </div>
+      <div class="zoom-controls" role="group" aria-label="Zoom controls">
+        <button class="zoom-btn" id="zoomOut" aria-label="Zoom out">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+        <button class="zoom-btn zoom-reset" id="zoomReset" aria-label="Reset zoom">⤢</button>
+      </div>
+    </div>
+
+    <div class="cabin-viewport" id="cabinViewport">
+      <div class="cabin-stage" id="cabinStage">
+        <svg class="aircraft-outline" id="aircraftOutline" viewBox="0 0 420 980" aria-hidden="true">
+          <path id="fuselagePath" d="M210 6
+            C 300 6 350 90 358 220
+            L 358 760
+            C 358 860 300 940 210 974
+            C 120 940 62 860 62 760
+            L 62 220
+            C 70 90 120 6 210 6 Z"
+            fill="url(#fuselageGrad)" stroke="url(#fuselageStroke)" stroke-width="2"/>
+          <path id="wingLeft" class="wing" d="M62 460 L-60 620 L-40 660 L62 560 Z" fill="url(#wingGrad)"/>
+          <path id="wingRight" class="wing" d="M358 460 L480 620 L460 660 L358 560 Z" fill="url(#wingGrad)"/>
+          <ellipse class="nose-highlight" cx="210" cy="120" rx="90" ry="140" fill="url(#noseGlow)"/>
+          <defs>
+            <linearGradient id="fuselageGrad" x1="62" y1="6" x2="358" y2="974" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#232B3D"/>
+              <stop offset="45%" stop-color="#161C29"/>
+              <stop offset="100%" stop-color="#0D111B"/>
+            </linearGradient>
+            <linearGradient id="fuselageStroke" x1="62" y1="6" x2="358" y2="974" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4F7CFF" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#4F7CFF" stop-opacity="0.08"/>
+            </linearGradient>
+            <linearGradient id="wingGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#2A3244"/>
+              <stop offset="100%" stop-color="#141924"/>
+            </linearGradient>
+            <radialGradient id="noseGlow" cx="50%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="#4F7CFF" stop-opacity="0.22"/>
+              <stop offset="100%" stop-color="#4F7CFF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+        </svg>
+
+        <div class="cabin-front" aria-hidden="true">
+          <div class="front-icon" title="Lavatory">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="5" r="2" fill="currentColor"/><circle cx="16" cy="5" r="2" fill="currentColor"/><path d="M8 8v9M16 8v9M5 12h6M13 12h6" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+          <div class="front-icon" title="Galley">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 9h16v2a8 8 0 0 1-16 0V9Z" stroke="currentColor" stroke-width="1.4"/><path d="M8 4v4M12 4v4M16 4v4" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+          <div class="front-icon" title="Crew">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="5" r="2" fill="currentColor"/><circle cx="15" cy="5" r="2" fill="currentColor"/><path d="M9 8c-2 0-3 1.5-3 3v6M15 8c2 0 3 1.5 3 3v6" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+        </div>
+
+        <div class="column-headers" id="columnHeaders" aria-hidden="true"></div>
+        <div class="seat-map" id="seatMap" role="grid" aria-label="Seat map"></div>
+      </div>
+    </div>
+
+    <div class="legend" aria-label="Seat status legend">
+      <span class="legend-item"><i class="legend-swatch legend-available"></i> Available</span>
+      <span class="legend-item"><i class="legend-swatch legend-selected"></i> Selected</span>
+      <span class="legend-item"><i class="legend-swatch legend-booked"></i> Booked</span>
+      <span class="legend-item"><i class="legend-swatch legend-premium"></i> Premium</span>
+      <span class="legend-item"><i class="legend-swatch legend-exit"></i> Exit Row</span>
+    </div>
+  </main>
+
+  <!-- ============ RIGHT COLUMN ============ -->
+  <aside class="col col-right" aria-label="Flight and booking summary">
+    <div class="panel flight-panel">
+      <div class="panel-eyebrow">
+        <span class="panel-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 9L22 12L14 14L12 22L10 14L2 12L10 9Z" fill="currentColor"/></svg>
+        </span>
+        FLIGHT DETAILS
+      </div>
+      <div class="route">
+        <div class="route-point">
+          <div class="route-code">DEL</div>
+          <div class="route-city">New Delhi</div>
+          <div class="route-sub">Indira Gandhi Intl.</div>
+        </div>
+        <div class="route-path" aria-hidden="true">
+          <span class="route-duration">2h 25m</span>
+          <span class="route-line">
+            <span class="route-dot route-dot-a"></span>
+            <svg class="route-plane" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12L20 12M14 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="route-dot route-dot-b"></span>
+          </span>
+        </div>
+        <div class="route-point route-point-end">
+          <div class="route-code">BOM</div>
+          <div class="route-city">Mumbai</div>
+          <div class="route-sub">Chhatrapati Shivaji Intl.</div>
+        </div>
+      </div>
+
+      <div class="flight-grid">
+        <div class="flight-chip"><span class="chip-label">DATE</span><span class="chip-value">24 May, 2026</span><span class="chip-sub">Sunday</span></div>
+        <div class="flight-chip"><span class="chip-label">BOARDING</span><span class="chip-value" id="liveClock">10:30 AM</span><span class="chip-sub">Gate B12</span></div>
+        <div class="flight-chip"><span class="chip-label">CLASS</span><span class="chip-value">Economy</span><span class="chip-sub">Saver</span></div>
+      </div>
+    </div>
+
+    <div class="panel selection-panel">
+      <div class="panel-eyebrow panel-eyebrow-row">
+        <span>YOUR SELECTION</span>
+        <span class="seat-count-badge" id="seatCountBadge">0 Seats</span>
+      </div>
+
+      <div class="selected-list" id="selectedList">
+        <div class="empty-state" id="emptyState">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="7" width="14" height="12" rx="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M9 7V5.5a1.5 1.5 0 0 1 3 0V7" stroke="currentColor" stroke-width="1.4"/></svg>
+          <p>No seats selected yet.<br>Tap a seat on the map to add it here.</p>
+        </div>
+      </div>
+
+      <div class="total-row">
+        <span>Total Price</span>
+        <span class="total-price"><span class="total-currency">₹</span><span id="totalPrice">0</span></span>
+      </div>
+
+      <button class="cta-btn" id="continueBtn" disabled>
+        <span class="cta-ripple" aria-hidden="true"></span>
+        <span class="cta-label">Continue to Passenger Info</span>
+        <span class="cta-arrow" aria-hidden="true">›</span>
+      </button>
+
+      <div class="secure-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="1.3"/></svg>
+        Secure booking · your data is protected
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ================= TOOLTIP ================= -->
+<div class="seat-tooltip" id="seatTooltip" role="tooltip" aria-hidden="true">
+  <div class="tooltip-head">
+    <span class="tooltip-seat-id" id="ttSeatId">1A</span>
+    <span class="tooltip-type" id="ttType">Window</span>
+  </div>
+  <div class="tooltip-row"><span>Legroom</span><span id="ttLegroom">Standard</span></div>
+  <div class="tooltip-row"><span>Status</span><span id="ttStatus">Available</span></div>
+  <div class="tooltip-row tooltip-price"><span>Price</span><span id="ttPrice">₹1,200</span></div>
+</div>
+
+<!-- ================= HELP DIALOG ================= -->
+<div class="modal-overlay" id="helpOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">How seat selection works</h2>
+    <ul class="modal-list">
+      <li><b>Standard</b> — included in your fare.</li>
+      <li><b>Window / Aisle</b> — small preference fee.</li>
+      <li><b>Premium / Emergency Exit</b> — extra legroom, higher fee.</li>
+      <li><b>Business / VIP</b> — full premium cabin experience.</li>
+      <li>Use arrow keys to move between seats, Enter or Space to select.</li>
+    </ul>
+    <button class="modal-close" id="helpClose">Got it</button>
+  </div>
+</div>
+
+<div class="sr-live" id="srLive" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
