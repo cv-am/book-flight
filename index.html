@@ -349,11 +349,14 @@ button{ font-family:inherit; }
     return btn;
   }
 
-  function assemble(){
-    Array.from(seatGrid.querySelectorAll('.seat')).forEach((el,i) => {
-      setTimeout(() => el.classList.add('is-in'), 12*i);
-    });
-  }
+function assemble(){
+  Array.from(seatGrid.querySelectorAll('.seat')).forEach((el,i) => {
+    setTimeout(() => {
+      el.classList.add('is-in');
+      el.style.opacity = '1';   // <-- add this line
+    }, 12*i);
+  });
+}
 
   /* ---- selection logic ---- */
   const selectionList = $('#selectionList');
