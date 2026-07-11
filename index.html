@@ -54,35 +54,59 @@ button{ font-family:inherit; }
   padding: 20px 0 60px;
   perspective: 1200px;
 }
-.plane-shell{
-  position:relative;
+.plane-shell {
+  position: relative;
   width: 260px;
-  padding: 46px 18px 26px;
-  background: linear-gradient(180deg, #FDFEFF 0%, #F4F7FB 55%, #EDF1F7 100%);
-  border-radius: 130px 130px 26px 26px;
-  border: 1.5px solid #E1E6EF;
-  box-shadow:
-    0 30px 60px -20px rgba(20,30,60,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.9);
+  /* Increased top padding to give the nose more breathing room */
+  padding: 190px 18px 26px; 
+  background: #ffffff; /* The design uses a solid white plane body */
+  /* This is the magic line for the aerodynamic shape: */
+  border-radius: 50% 50% 40px 40px / 220px 220px 40px 40px; 
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(12, 31, 68, 0.08); /* Softer, cooler shadow */
   transition: transform 300ms var(--ease);
   will-change: transform;
+}
+.plane-shell::after {
+  content: '';
+  position: absolute;
+  /* Adjust these values slightly if the curve needs tightening */
+  top: 14px; 
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  border: 2px solid #E4E8F0; /* Soft inner line */
+  border-bottom: none; /* Open at the bottom */
+  /* Matches the outer shape but slightly smaller */
+  border-radius: 50% 50% 0 0 / 210px 210px 0 0; 
+  pointer-events: none; /* Ensures it doesn't block seat clicks */
+  z-index: 0;
 }
 .plane-shell::before{
   /* soft top sheen */
   content:''; position:absolute; top:4%; left:50%; width:64%; height:22%;
   transform:translateX(-50%); border-radius:50%;
-  background:radial-gradient(closest-side, rgba(255,255,255,0.9), transparent 75%);
+  /* background:radial-gradient(closest-side, rgba(255,255,255,0.9), transparent 75%); */
   pointer-events:none;
 }
-.cockpit{
-  position:relative; display:flex; justify-content:center; margin-bottom:14px; height:46px;
+.cockpit-arrows {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  opacity: 0.7;
 }
-.cockpit svg path{ opacity:0.6; }
+.cockpit svg{ opacity:0.55; animation: cockpitFloat 3.4s ease-in-out infinite; }
+.cockpit svg:nth-child(2){ animation-delay:0.3s; }
+.cockpit svg:nth-child(3){ animation-delay:0.6s; }
 @keyframes cockpitFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
 
 .col-headers{
   display:grid; grid-template-columns: 30px 30px 30px 14px 30px 30px; gap:6px; justify-content:center;
-  margin: 0 auto 8px; width:fit-content;
+  margin: 0 1px 8px auto; width:fit-content;
   font-family:var(--font-body); font-size:11px; font-weight:600; color:var(--muted-2); text-align:center;
 }
 
@@ -92,7 +116,7 @@ button{ font-family:inherit; }
 .aisle-gap{ width:100%; }
 
 .seat{
-  width:30px; height:30px; border-radius:8px;
+  width:30px; height:40px; border-radius:8px;
   background: var(--grey-seat); border:1.5px solid var(--grey-seat-border);
   color:var(--muted); font-size:11px; font-weight:700; font-family:var(--font-body);
   display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -103,11 +127,10 @@ button{ font-family:inherit; }
 @keyframes seatIn{ from{ opacity:0; transform:scale(0.6) translateY(6px);} to{ opacity:1; transform:scale(1) translateY(0);} }
 
 .seat:hover:not(.is-booked):not(.is-selected){
-  transform: translateY(-2px) scale(1.08);
+  transform: translateY(-4px) scale(1.08);
   border-color: var(--navy);
   color: var(--navy);
-  box-shadow: 0 6px 14px rgba(12,31,68,0.12);
-}
+  box-shadow:0 12px 25px rgba(0,0,0,.18);}
 .seat:active:not(.is-booked){ transform: scale(0.92); }
 
 .seat.is-booked{
@@ -138,6 +161,7 @@ button{ font-family:inherit; }
 .card{
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
   padding:22px 24px; box-shadow: 0 12px 30px -18px rgba(20,30,60,0.14);
+  
 }
 
 .flight-icon-badge{
@@ -163,7 +187,6 @@ button{ font-family:inherit; }
 .route-point-end{ text-align:right; }
 
 .detail-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.detail-item{ }
 .detail-label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--muted-2); text-transform:uppercase; margin-bottom:5px; }
 .detail-value{ font-size:13.5px; font-weight:700; color:var(--text); }
 
@@ -218,12 +241,12 @@ button{ font-family:inherit; }
   <!-- ===== LEFT: PLANE ===== -->
   <div class="plane-wrap">
     <div class="plane-shell" id="planeShell">
-      <div class="cockpit" aria-hidden="true">
-        <svg width="90" height="46" viewBox="0 0 90 46" fill="none">
-          <path d="M45 4 L52 40 L38 40 Z" fill="#B9C6DE" transform="rotate(-24 45 22)"/>
-          <path d="M45 2 L52 40 L38 40 Z" fill="#AEBCD8"/>
-          <path d="M45 4 L52 40 L38 40 Z" fill="#B9C6DE" transform="rotate(24 45 22)"/>
-          </svg>
+      <div class="cockpit-arrows" aria-hidden="true">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#DDE3EF" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M4 18L12 10L20 18" />
+          <path d="M4 12L12 4L20 12" />
+        </svg>
       </div>
 
       <div class="col-headers">
