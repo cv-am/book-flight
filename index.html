@@ -28,6 +28,13 @@
   --ease:cubic-bezier(.22,.9,.32,1);
   --font-display:'Space Grotesk',sans-serif;
   --font-body:'Inter',sans-serif;
+  /* New Seat Colors */
+  --seat-avail-top: #FFFFFF;
+  --seat-avail-bot: #86A6B5;
+  --seat-booked-top: #2B52A1;
+  --seat-booked-bot: #13337C;
+  --seat-select-top: #FDDCAE;
+  --seat-select-bot: #E6AE67;
 }
 *,*::before,*::after{ box-sizing:border-box; }
 body{
@@ -43,6 +50,32 @@ button{ font-family:inherit; }
 .page-title{ font-family:var(--font-display); font-weight:500; font-size:26px; margin-bottom:28px; }
 .page-title b{ font-weight:700; }
 
+/* Seat Input UI */
+.seat-input-group {
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.seat-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.seat-input-group input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--muted-2);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.seat-input-group input:focus {
+  border-color: var(--navy);
+}
+
 .layout{
   display:grid; grid-template-columns: 1fr 380px; gap:36px; align-items:start;
   max-width:1400px; margin:0 auto;
@@ -56,104 +89,117 @@ button{ font-family:inherit; }
 }
 .plane-shell {
   position: relative;
-  width: 260px;
+  width: 330px;
   /* Increased top padding to give the nose more breathing room */
   padding: 190px 18px 26px; 
   background: #ffffff; /* The design uses a solid white plane body */
   /* This is the magic line for the aerodynamic shape: */
-  border-radius: 50% 50% 40px 40px / 220px 220px 40px 40px; 
-  border: 1px solid var(--border);
+border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px solid var(--border);
   box-shadow: 0 10px 40px rgba(12, 31, 68, 0.08); /* Softer, cooler shadow */
+  overflow: hidden;
   transition: transform 300ms var(--ease);
   will-change: transform;
 }
-.plane-shell::after {
-  content: '';
+
+/* Inner cabin line */
+.plane-inner-line {
   position: absolute;
-  /* Adjust these values slightly if the curve needs tightening */
   top: 14px; 
   left: 14px;
   right: 14px;
-  bottom: 0;
-  border: 2px solid #E4E8F0; /* Soft inner line */
-  border-bottom: none; /* Open at the bottom */
-  /* Matches the outer shape but slightly smaller */
-  border-radius: 50% 50% 0 0 / 210px 210px 0 0; 
-  pointer-events: none; /* Ensures it doesn't block seat clicks */
-  z-index: 0;
+  bottom: -10px; 
+  border: 1.5px solid #E4E8F0;
+  border-radius: 146px 146px 15px 15px / 266px 266px 15px 15px; 
+  pointer-events: none;
+  z-index: 2;
 }
-.plane-shell::before{
-  /* soft top sheen */
-  content:''; position:absolute; top:4%; left:50%; width:64%; height:22%;
-  transform:translateX(-50%); border-radius:50%;
-  /* background:radial-gradient(closest-side, rgba(255,255,255,0.9), transparent 75%); */
-  pointer-events:none;
+
+/* The curved Top Cap */
+.plane-top-cap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 165px;
+  background: #F4F7FB;
+  border-bottom: 1.5px solid #E4E8F0;
+  /* Creates the convex curve shown in the image */
+  border-radius: 0 0 50% 50% / 0 0 30px 30px;
+  z-index: 3;
 }
+
+/* Specific SVG chevrons/arrows */
 .cockpit-arrows {
   position: absolute;
-  top: 80px;
+  top: 75px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-  opacity: 0.7;
+  z-index: 3;
 }
-.cockpit svg{ opacity:0.55; animation: cockpitFloat 3.4s ease-in-out infinite; }
-.cockpit svg:nth-child(2){ animation-delay:0.3s; }
-.cockpit svg:nth-child(3){ animation-delay:0.6s; }
-@keyframes cockpitFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
 
 .col-headers{
-  display:grid; grid-template-columns: 30px 30px 30px 14px 30px 30px; gap:6px; justify-content:center;
-  margin: 0 1px 8px auto; width:fit-content;
+  display:grid; grid-template-columns: 32px 32px 32px 14px 32px 32px; gap:6px; justify-content:center;
+  margin: 0 55px 12px; width:fit-content;
+  z-index: 4;
+  position: relative;
   font-family:var(--font-body); font-size:11px; font-weight:600; color:var(--muted-2); text-align:center;
 }
 
-.seat-grid{ display:flex; flex-direction:column; gap:7px; align-items:center; }
+.seat-grid{ display:flex; flex-direction:column; gap:7px; align-items:center; z-index: 4; position: relative; }
 .seat-row{ display:grid; grid-template-columns: 20px 30px 30px 30px 14px 30px 30px; gap:6px; align-items:center; width:fit-content; }
 .row-num{ font-size:10.5px; color:var(--muted-2); text-align:right; font-weight:600; }
 .aisle-gap{ width:100%; }
 
-.seat{
-  width:30px; height:40px; border-radius:8px;
-  background: var(--grey-seat); border:1.5px solid var(--grey-seat-border);
-  color:var(--muted); font-size:11px; font-weight:700; font-family:var(--font-body);
-  display:flex; align-items:center; justify-content:center; cursor:pointer;
-  transition: transform 180ms var(--ease), background 180ms var(--ease), border-color 180ms var(--ease), color 180ms var(--ease), box-shadow 180ms var(--ease);
-  opacity:0;
+/* Exact Dual-Tone Seat Styling */
+.seat {
+  width: 30px; 
+  height: 30px; 
+  border-radius: 8px;
+  /* 65% white top, 35% teal bottom */
+  background: linear-gradient(to bottom, var(--seat-avail-top) 65%, var(--seat-avail-bot) 65%);
+  border: 1px solid var(--seat-avail-bot);
+  color: var(--navy); 
+  font-size: 11px; 
+  font-weight: 700; 
+  font-family: var(--font-body);
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding-bottom: 6px; /* Pushes text up slightly into the white area */
+  cursor: pointer;
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  opacity: 0; /* Keeps your original load-in animation */
 }
-.seat.is-in{ animation: seatIn 380ms var(--ease) forwards; }
-@keyframes seatIn{ from{ opacity:0; transform:scale(0.6) translateY(6px);} to{ opacity:1; transform:scale(1) translateY(0);} }
 
-.seat:hover:not(.is-booked):not(.is-selected){
+.seat:hover:not(.is-booked):not(.is-selected) {
   transform: translateY(-4px) scale(1.08);
-  border-color: var(--navy);
-  color: var(--navy);
-  box-shadow:0 12px 25px rgba(0,0,0,.18);}
-.seat:active:not(.is-booked){ transform: scale(0.92); }
-
-.seat.is-booked{
-  background: var(--booked); border-color: var(--booked-2); color:#fff; cursor:not-allowed;
+  box-shadow: 0 12px 25px rgba(0,0,0,.18);
 }
-.seat.is-booked:hover{ transform:none; box-shadow:none; }
+.seat:active:not(.is-booked) { transform: scale(0.92); }
 
-.seat.is-selected{
-  background: var(--orange); border-color:#E9B676; color: var(--orange-text);
+.seat.is-booked {
+  background: linear-gradient(to bottom, var(--seat-booked-top) 65%, var(--seat-booked-bot) 65%);
+  border-color: var(--seat-booked-bot);
+  color: #fff; 
+  cursor: not-allowed;
+}
+.seat.is-booked:hover { transform: none; box-shadow: none; }
+
+.seat.is-selected {
+  background: linear-gradient(to bottom, var(--seat-select-top) 65%, var(--seat-select-bot) 65%);
+  border-color: var(--seat-select-bot);
+  color: var(--navy);
   animation: selectPop 380ms var(--ease);
 }
-@keyframes selectPop{ 0%{ transform:scale(0.8);} 55%{ transform:scale(1.16);} 100%{ transform:scale(1);} }
-.seat.is-deselect{ animation: deselectPop 260ms var(--ease); }
-@keyframes deselectPop{ 0%{ transform:scale(1.08);} 100%{ transform:scale(1);} }
 
 .plane-legend{
   display:flex; gap:22px; justify-content:center; margin-top:26px; flex-wrap:wrap;
 }
 .legend-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); font-weight:500; }
 .legend-dot{ width:13px; height:13px; border-radius:4px; display:inline-block; }
-.legend-available{ background:var(--grey-seat); border:1.5px solid var(--grey-seat-border); }
-.legend-selected{ background:var(--orange); border:1.5px solid #E9B676; }
-.legend-booked{ background:var(--booked); }
+.legend-available { background: linear-gradient(to bottom, var(--seat-avail-top) 50%, var(--seat-avail-bot) 50%); border: 1px solid var(--seat-avail-bot); }
+.legend-selected { background: linear-gradient(to bottom, var(--seat-select-top) 50%, var(--seat-select-bot) 50%); border: 1px solid var(--seat-select-bot); }
+.legend-booked { background: linear-gradient(to bottom, var(--seat-booked-top) 50%, var(--seat-booked-bot) 50%); }
 
 /* =========================== RIGHT: SUMMARY PANEL =========================== */
 .summary-col{ position:sticky; top:28px; display:flex; flex-direction:column; gap:18px; }
@@ -236,16 +282,22 @@ button{ font-family:inherit; }
 <body>
 
 <h1 class="page-title">Seat <b>Selection</b></h1>
-
+<div class="seat-input-group">
+        <label for="seatLimitInput">Number of passengers</label>
+        <input type="number" id="seatLimitInput" value="0" min="1" max="20">
+</div>
 <div class="layout">
   <!-- ===== LEFT: PLANE ===== -->
   <div class="plane-wrap">
     <div class="plane-shell" id="planeShell">
+      <div class="plane-top-cap"></div>
+      <div class="plane-inner-line"></div>
+      
       <div class="cockpit-arrows" aria-hidden="true">
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#DDE3EF" stroke-width="2.5" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M4 18L12 10L20 18" />
-          <path d="M4 12L12 4L20 12" />
+        <svg width="60" height="75" viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30 0 L50 12 L42 22 L30 10 L18 22 L10 12 Z" fill="#DCE3EE"/>
+          <path d="M30 25 L50 37 L42 47 L30 35 L18 47 L10 37 Z" fill="#DCE3EE"/>
+          <path d="M30 50 L50 62 L42 72 L30 60 L18 72 L10 62 Z" fill="#DCE3EE"/>
         </svg>
       </div>
 
@@ -336,6 +388,25 @@ button{ font-family:inherit; }
   const selectedIds = [];
   let guestPointer = 0;
 
+// --- Input Limit Logic ---
+  const seatLimitInput = $('#seatLimitInput');
+  let maxAllowedSeats = parseInt(seatLimitInput.value, 10);
+
+  seatLimitInput.addEventListener('change', (e) => {
+    let val = parseInt(e.target.value, 10);
+    if (val < 1 || isNaN(val)) { 
+      val = 1; 
+      e.target.value = 1; 
+    }
+    maxAllowedSeats = val;
+
+    // Optional: Clear selection if user lowers limit below current selection
+    if (selectedIds.length > maxAllowedSeats) {
+      alert(`Limit reduced to ${maxAllowedSeats}. Clearing your current selection.`);
+      [...selectedIds].forEach(id => toggleSeat(id)); // Deselects everything
+    }
+  });
+
   /* ---- render seat grid ---- */
   const seatGrid = $('#seatGrid');
   function renderGrid(){
@@ -392,6 +463,12 @@ function assemble(){
     const idx = selectedIds.indexOf(id);
 
     if (idx === -1){
+      
+      if (selectedIds.length >= maxAllowedSeats) {
+        alert(`You can only select up to ${maxAllowedSeats} seats based on your input.`);
+        return;
+      }
+
       selectedIds.push(id);
       seat.selected = true;
       seat.guest = GUEST_NAMES[guestPointer % GUEST_NAMES.length];
