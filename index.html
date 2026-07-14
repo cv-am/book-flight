@@ -111,30 +111,18 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
   border: 1.5px solid #E4E8F0;
   border-radius: 146px 146px 15px 15px / 266px 266px 15px 15px; 
   pointer-events: none;
-  z-index: 2;
+  z-index: 5;
 }
 
-/* The curved Top Cap */
-.plane-top-cap {
+/* SVG covering the nose, dividing curve, and windows */
+.plane-nose-svg {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 165px;
-  background: #F4F7FB;
-  border-bottom: 1.5px solid #E4E8F0;
-  /* Creates the convex curve shown in the image */
-  border-radius: 0 0 50% 50% / 0 0 30px 30px;
-  z-index: 3;
-}
-
-/* Specific SVG chevrons/arrows */
-.cockpit-arrows {
-  position: absolute;
-  top: 75px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
+  width: 100%;
+  height: 190px;
+  z-index: 4;
+  pointer-events: none; /* Allows clicking through it if needed */
 }
 
 .col-headers{
@@ -290,16 +278,34 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
   <!-- ===== LEFT: PLANE ===== -->
   <div class="plane-wrap">
     <div class="plane-shell" id="planeShell">
-      <div class="plane-top-cap"></div>
       <div class="plane-inner-line"></div>
       
-      <div class="cockpit-arrows" aria-hidden="true">
-        <svg width="60" height="75" viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M30 0 L50 12 L42 22 L30 10 L18 22 L10 12 Z" fill="#DCE3EE"/>
-          <path d="M30 25 L50 37 L42 47 L30 35 L18 47 L10 37 Z" fill="#DCE3EE"/>
-          <path d="M30 50 L50 62 L42 72 L30 60 L18 72 L10 62 Z" fill="#DCE3EE"/>
-        </svg>
-      </div>
+      <svg class="plane-nose-svg" viewBox="0 0 330 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="capGrad" x1="0" y1="0" x2="0" y2="190" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#E2E8F0" />
+          </linearGradient>
+          
+          <linearGradient id="windowGrad" x1="0" y1="50" x2="0" y2="130" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#E8EEF5" />
+            <stop offset="100%" stop-color="#B8C8DB" />
+          </linearGradient>
+        </defs>
+        
+        <path d="M 14,185 Q 165,115 316,185 A 131 171 0 0 0 14 185 Z" fill="#F4F7FB" />
+        <path d="M 26,180 Q 165,120 304,180" stroke="#E4E8F0" stroke-width="1.5" fill="none" />
+        <g fill="url(#windowGrad)">
+          <path d="M 160 40 L 115 65 L 160 60 Z" />
+          <path d="M 170 40 L 215 65 L 170 60 Z" />
+
+          <path d="M 130 70 L 105 110 L 130 105 Z" />
+          <path d="M 200 70 L 225 110 L 200 105 Z" />
+
+          <path d="M 110 120 L 85 153 L 105 150 Z" />
+          <path d="M 220 120 L 245 153 L 225 150 Z" />
+        </g>
+      </svg>
 
       <div class="col-headers">
         <span>A</span><span>B</span><span>C</span><span></span><span>D</span><span>E</span>
