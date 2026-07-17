@@ -366,35 +366,19 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
 </div>
 
 <script>
-(() => {
+  (() => {
   'use strict';
   const $ = s => document.querySelector(s);
 
-  /* ---- seat data ---- */
   const COLUMNS = ['A','B','C','D','E'];
-  const ROWS = 12;
-  const BOOKED_RATIO = 0.14;
-  const GUEST_NAMES = ['Shivam Singh','Mahak Choursiya','Yashu Mishra','Ragini Saxena','Palak Jain','Vikrant Singh','Vansh Chauhan','Anant Chauhan','Ruchi Dwivedi','Janvi Chauhan'];
+  const GUEST_NAMES = ['Passanger 1','Passanger 2','Passanger 3','Passanger 4','Passanger 5','Passanger 6','Passanger 7','Passanger 8','Passanger 9','Passanger 10'];
 
-  let seed = 77;
-  function rand(){ seed = (seed*9301+49297) % 233280; return seed/233280; }
-
-  const seats = [];
-  for (let row = 1; row <= ROWS; row++){
-    COLUMNS.forEach(col => {
-      seats.push({
-        id: `${row}${col}`,
-        row, col,
-        booked: rand() < BOOKED_RATIO,
-        selected: false
-      });
-    });
-  }
-  const seatById = new Map(seats.map(s => [s.id, s]));
+  let ROWS = 0; 
+  const seatById = new Map();
   const selectedIds = [];
   let guestPointer = 0;
 
-// --- Input Limit Logic ---
+  // --- Input Limit Logic ---
   const seatLimitInput = $('#seatLimitInput');
   let maxAllowedSeats = parseInt(seatLimitInput.value, 10);
 
@@ -406,15 +390,116 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
     }
     maxAllowedSeats = val;
 
-    // Optional: Clear selection if user lowers limit below current selection
     if (selectedIds.length > maxAllowedSeats) {
       alert(`Limit reduced to ${maxAllowedSeats}. Clearing your current selection.`);
-      [...selectedIds].forEach(id => toggleSeat(id)); // Deselects everything
+      [...selectedIds].forEach(id => toggleSeat(id)); 
     }
   });
 
-  /* ---- render seat grid ---- */
   const seatGrid = $('#seatGrid');
+  const selectionList = $('#selectionList');
+  const emptyState = $('#emptyState');
+  const seatCountBadge = $('#seatCountBadge');
+
+  // --- API INTEGRATION ---
+  
+  async function fetchSeats() {
+    try {
+      const response = await fetch('https://brainnetic.in/api/WebCheckIn/GetAllSeats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "flightId": 8,
+          "departureDate": "2026-07-29T00:00:00.000"
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.status === "true" && result.data && result.data.seatDetails) {
+        console.log("Successfully fetched live API data!");
+        processSeats(result.data.seatDetails);
+      } else {
+        console.error("API returned an error or empty data:", result.message);
+        loadMockFallback(); // Use fallback on bad data
+      }
+    } catch (error) {
+      console.error("Failed to fetch seats (Likely CORS or offline). Loading fallback data...", error);
+      loadMockFallback(); // Use fallback on network error
+    }
+  }
+  
+
+  // --- LOCAL DATA INTEGRATION ---
+
+  /*
+  async function fetchSeats() {
+    try {
+      // Point directly to your local file. No POST method or headers needed for a local file read.
+      const response = await fetch('./dummy-data.json'); 
+      const result = await response.json();
+      
+      if (result.status === "true" && result.data && result.data.seatDetails) {
+        console.log("Successfully loaded local JSON data!");
+        processSeats(result.data.seatDetails);
+      } else {
+        console.error("Local data format is incorrect:", result.message);
+        loadMockFallback(); 
+      }
+    } catch (error) {
+      console.error("Failed to load local dummy-data.json", error);
+      loadMockFallback(); 
+    }
+  }
+  */
+
+  // Fallback function mimicking the exact structure of your API
+  function loadMockFallback() {
+    const mockSeats = [];
+    const explicitlyBooked = ['2E', '5C', '5E', '7E', '8D']; // Hardcoded blocked seats to match your old UI
+    
+    for (let r = 1; r <= 11; r++) {
+      COLUMNS.forEach(c => {
+        const seatNum = `${r}${c}`;
+        mockSeats.push({
+          seatNumber: seatNum,
+          rowNo: r,
+          columnNo: c,
+          isBooked: explicitlyBooked.includes(seatNum),
+          isBlocked: false,
+          seatType: "Economy"
+        });
+      });
+    }
+    processSeats(mockSeats);
+  }
+
+  function processSeats(seatDetails) {
+    seatById.clear();
+    let maxRow = 0;
+
+    seatDetails.forEach(seatInfo => {
+      const seatId = seatInfo.seatNumber;
+      if (seatInfo.rowNo > maxRow) maxRow = seatInfo.rowNo;
+
+      seatById.set(seatId, {
+        id: seatId,
+        row: seatInfo.rowNo,
+        col: seatInfo.columnNo, 
+        booked: seatInfo.isBooked || seatInfo.isBlocked, 
+        selected: false,
+        seatType: seatInfo.seatType
+      });
+    });
+
+    ROWS = maxRow; 
+    renderGrid();
+    requestAnimationFrame(() => setTimeout(assemble, 150));
+  }
+
+  /* ---- render seat grid ---- */
   function renderGrid(){
     seatGrid.innerHTML = '';
     for (let row = 1; row <= ROWS; row++){
@@ -427,9 +512,11 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
       rowEl.appendChild(rowNum);
 
       ['A','B','C'].forEach(c => rowEl.appendChild(seatBtn(row, c)));
+      
       const gap = document.createElement('span');
       gap.className = 'aisle-gap';
       rowEl.appendChild(gap);
+      
       ['D','E'].forEach(c => rowEl.appendChild(seatBtn(row, c)));
 
       seatGrid.appendChild(rowEl);
@@ -437,9 +524,19 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
   }
 
   function seatBtn(row, col){
-    const seat = seatById.get(`${row}${col}`);
+    const seatId = `${row}${col}`;
+    const seat = seatById.get(seatId);
+    
     const btn = document.createElement('button');
     btn.type = 'button';
+    
+    if (!seat) {
+        btn.className = 'seat';
+        btn.style.visibility = 'hidden';
+        btn.disabled = true;
+        return btn;
+    }
+
     btn.className = 'seat' + (seat.booked ? ' is-booked' : '');
     btn.dataset.seatId = seat.id;
     btn.textContent = col;
@@ -448,20 +545,18 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
     return btn;
   }
 
-function assemble(){
-  Array.from(seatGrid.querySelectorAll('.seat')).forEach((el,i) => {
-    setTimeout(() => {
-      el.classList.add('is-in');
-      el.style.opacity = '1';   // <-- add this line
-    }, 12*i);
-  });
-}
+  function assemble(){
+    Array.from(seatGrid.querySelectorAll('.seat')).forEach((el,i) => {
+      setTimeout(() => {
+        if(el.style.visibility !== 'hidden') {
+          el.classList.add('is-in');
+          el.style.opacity = '1';
+        }
+      }, 12*i);
+    });
+  }
 
   /* ---- selection logic ---- */
-  const selectionList = $('#selectionList');
-  const emptyState = $('#emptyState');
-  const seatCountBadge = $('#seatCountBadge');
-
   function toggleSeat(id){
     const seat = seatById.get(id);
     if (!seat || seat.booked) return;
@@ -469,7 +564,6 @@ function assemble(){
     const idx = selectedIds.indexOf(id);
 
     if (idx === -1){
-      
       if (selectedIds.length >= maxAllowedSeats) {
         alert(`You can only select up to ${maxAllowedSeats} seats based on your input.`);
         return;
@@ -500,7 +594,7 @@ function assemble(){
     item.innerHTML = `
       <div class="seat-item-badge">${seat.id}</div>
       <div class="seat-item-info">
-        <div class="seat-item-class">Economy</div>
+        <div class="seat-item-class">${seat.seatType || 'Economy'}</div>
         <div class="seat-item-name">${seat.guest}</div>
       </div>
       <button class="seat-item-remove" aria-label="Remove seat ${seat.id}">×</button>
@@ -549,8 +643,8 @@ function assemble(){
   });
 
   /* ---- boot ---- */
-  renderGrid();
-  requestAnimationFrame(() => setTimeout(assemble, 150));
+  fetchSeats();
+
 })();
 </script>
 </body>
