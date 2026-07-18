@@ -423,11 +423,13 @@ border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px sol
         processSeats(result.data.seatDetails);
       } else {
         console.error("API returned an error or empty data:", result.message);
-        loadMockFallback(); // Use fallback on bad data
+        seatGrid.innerHTML = `<div class="empty-state">API error: ${result.message || 'No seat data returned.'}</div>`;
+        // loadMockFallback(); // re-enable temporarily for local UI testing only
       }
     } catch (error) {
-      console.error("Failed to fetch seats (Likely CORS or offline). Loading fallback data...", error);
-      loadMockFallback(); // Use fallback on network error
+      console.error("Failed to fetch seats:", error);
+      seatGrid.innerHTML = `<div class="empty-state">Couldn't load seats. ${error.message || 'Check console for details (likely CORS).'}</div>`;
+      // loadMockFallback(); // re-enable temporarily for local UI testing only
     }
   }
   
