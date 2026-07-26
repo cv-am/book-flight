@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seat Selection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F8;
+  --card:#FFFFFF;
+  --border:#E4E8F0;
+  --navy:#0C1F44;
+  --navy-2:#16305F;
+  --text:#1B2338;
+  --muted:#8A93A8;
+  --muted-2:#B4BBCB;
+  --grey-seat:#EEF1F6;
+  --grey-seat-border:#D8DEE9;
+  --orange:#FBD9AE;
+  --orange-text:#8A5A16;
+  --booked:#2745A8;
+  --booked-2:#1B3480;
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:9px;
+  --ease:cubic-bezier(.22,.9,.32,1);
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  /* New Seat Colors */
+  --seat-avail-top: #FFFFFF;
+  --seat-avail-bot: #86A6B5;
+  --seat-booked-top: #2B52A1;
+  --seat-booked-bot: #13337C;
+  --seat-select-top: #FDDCAE;
+  --seat-select-bot: #E6AE67;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+  font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+  padding:32px clamp(16px,4vw,48px);
+}
+h1,h2,p{ margin:0; }
+button{ font-family:inherit; }
+::selection{ background:var(--navy); color:#fff; }
+:focus-visible{ outline:2px solid var(--navy); outline-offset:2px; border-radius:6px; }
+
+.page-title{ font-family:var(--font-display); font-weight:500; font-size:26px; margin-bottom:28px; }
+.page-title b{ font-weight:700; }
+
+/* Seat Input UI */
+.seat-input-group {
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.seat-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.seat-input-group input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--muted-2);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.seat-input-group input:focus {
+  border-color: var(--navy);
+}
+
+.layout{
+  display:grid; grid-template-columns: 1fr 380px; gap:36px; align-items:start;
+  max-width:1400px; margin:0 auto;
+}
+
+/* =========================== LEFT: PLANE =========================== */
+.plane-wrap{
+  position:relative; display:flex; justify-content:center;
+  padding: 20px 0 60px;
+  perspective: 1200px;
+}
+.plane-shell {
+  position: relative;
+  width: 330px;
+  /* Increased top padding to give the nose more breathing room */
+  padding: 190px 18px 26px; 
+  background: #ffffff; /* The design uses a solid white plane body */
+  /* This is the magic line for the aerodynamic shape: */
+border-radius: 160px 160px 30px 30px / 280px 280px 30px 30px;  border: 1.5px solid var(--border);
+  box-shadow: 0 10px 40px rgba(12, 31, 68, 0.08); /* Softer, cooler shadow */
+  overflow: hidden;
+  transition: transform 300ms var(--ease);
+  will-change: transform;
+}
+
+/* Inner cabin line */
+.plane-inner-line {
+  position: absolute;
+  top: 14px; 
+  left: 14px;
+  right: 14px;
+  bottom: -10px; 
+  border: 1.5px solid #E4E8F0;
+  border-radius: 146px 146px 15px 15px / 266px 266px 15px 15px; 
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* SVG covering the nose, dividing curve, and windows */
+.plane-nose-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 190px;
+  z-index: 4;
+  pointer-events: none; /* Allows clicking through it if needed */
+}
+
+.col-headers{
+  display:grid; grid-template-columns: 32px 32px 32px 14px 32px 32px; gap:6px; justify-content:center;
+  margin: 0 55px 12px; width:fit-content;
+  z-index: 4;
+  position: relative;
+  font-family:var(--font-body); font-size:11px; font-weight:600; color:var(--muted-2); text-align:center;
+}
+
+.seat-grid{ display:flex; flex-direction:column; gap:7px; align-items:center; z-index: 4; position: relative; }
+.seat-row{ display:grid; grid-template-columns: 20px 30px 30px 30px 14px 30px 30px; gap:6px; align-items:center; width:fit-content; }
+.row-num{ font-size:10.5px; color:var(--muted-2); text-align:right; font-weight:600; }
+.aisle-gap{ width:100%; }
+
+/* Exact Dual-Tone Seat Styling */
+.seat {
+  width: 30px; 
+  height: 30px; 
+  border-radius: 8px;
+  /* 65% white top, 35% teal bottom */
+  background: linear-gradient(to bottom, var(--seat-avail-top) 65%, var(--seat-avail-bot) 65%);
+  border: 1px solid var(--seat-avail-bot);
+  color: var(--navy); 
+  font-size: 11px; 
+  font-weight: 700; 
+  font-family: var(--font-body);
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding-bottom: 6px; /* Pushes text up slightly into the white area */
+  cursor: pointer;
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  opacity: 0; /* Keeps your original load-in animation */
+}
+
+.seat:hover:not(.is-booked):not(.is-selected) {
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 12px 25px rgba(0,0,0,.18);
+}
+.seat:active:not(.is-booked) { transform: scale(0.92); }
+
+.seat.is-booked {
+  background: linear-gradient(to bottom, var(--seat-booked-top) 65%, var(--seat-booked-bot) 65%);
+  border-color: var(--seat-booked-bot);
+  color: #fff; 
+  cursor: not-allowed;
+}
+.seat.is-booked:hover { transform: none; box-shadow: none; }
+
+.seat.is-selected {
+  background: linear-gradient(to bottom, var(--seat-select-top) 65%, var(--seat-select-bot) 65%);
+  border-color: var(--seat-select-bot);
+  color: var(--navy);
+  animation: selectPop 380ms var(--ease);
+}
+
+.plane-legend{
+  display:flex; gap:22px; justify-content:center; margin-top:26px; flex-wrap:wrap;
+}
+.legend-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); font-weight:500; }
+.legend-dot{ width:13px; height:13px; border-radius:4px; display:inline-block; }
+.legend-available { background: linear-gradient(to bottom, var(--seat-avail-top) 50%, var(--seat-avail-bot) 50%); border: 1px solid var(--seat-avail-bot); }
+.legend-selected { background: linear-gradient(to bottom, var(--seat-select-top) 50%, var(--seat-select-bot) 50%); border: 1px solid var(--seat-select-bot); }
+.legend-booked { background: linear-gradient(to bottom, var(--seat-booked-top) 50%, var(--seat-booked-bot) 50%); }
+
+/* =========================== RIGHT: SUMMARY PANEL =========================== */
+.summary-col{ position:sticky; top:28px; display:flex; flex-direction:column; gap:18px; }
+
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:22px 24px; box-shadow: 0 12px 30px -18px rgba(20,30,60,0.14);
+  
+}
+
+.flight-icon-badge{
+  width:34px; height:34px; border-radius:10px; background:#EEF2FB; color:var(--navy);
+  display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+}
+
+.card-eyebrow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:var(--muted-2);
+  text-transform:uppercase; margin-bottom:2px;
+}
+.card-eyebrow span.sub{ color:var(--muted-2); font-weight:500; letter-spacing:0; text-transform:none; font-size:11px; }
+
+.route{ display:flex; align-items:flex-start; justify-content:space-between; margin: 12px 0 18px; }
+.route-code{ font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--navy); line-height:1; }
+.route-label{ font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:var(--muted-2); text-transform:uppercase; margin-top:6px; }
+.route-mid{ display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:6px; }
+.route-line{ position:relative; width:64px; height:1px; background:var(--border); }
+.route-plane-icon{ color:var(--muted); animation: planeFloat 3s ease-in-out infinite; }
+@keyframes planeFloat{ 0%,100%{ transform:translateX(-4px);} 50%{ transform:translateX(4px);} }
+.route-num{ font-size:10px; color:var(--muted-2); font-weight:600; }
+.route-point-end{ text-align:right; }
+
+.detail-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.detail-label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--muted-2); text-transform:uppercase; margin-bottom:5px; }
+.detail-value{ font-size:13.5px; font-weight:700; color:var(--text); }
+
+.selection-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.selection-title{ font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--muted-2); text-transform:uppercase; }
+.seat-badge-count{
+  background:var(--navy); color:#fff; font-size:10.5px; font-weight:700; letter-spacing:0.04em;
+  padding:6px 13px; border-radius:999px;
+  transition: transform 200ms var(--ease);
+}
+
+.legend-row{ display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+.legend-row .legend-item{ font-size:11.5px; }
+
+.selection-list{ display:flex; flex-direction:column; gap:10px; min-height:40px; }
+.seat-item{
+  display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:var(--radius-md);
+  border:1px solid var(--border); background:#FAFBFD;
+  animation: itemIn 320ms var(--ease);
+}
+@keyframes itemIn{ from{ opacity:0; transform:translateX(10px);} to{ opacity:1; transform:translateX(0);} }
+.seat-item.is-out{ animation: itemOut 220ms var(--ease) forwards; }
+@keyframes itemOut{ to{ opacity:0; transform:translateX(10px) scale(0.96); height:0; padding:0; margin:0; border-width:0;} }
+
+.seat-item-badge{
+  width:36px; height:36px; border-radius:10px; background:var(--navy); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; flex-shrink:0;
+}
+.seat-item-info{ flex:1; min-width:0; }
+.seat-item-class{ font-size:13px; font-weight:700; color:var(--navy); }
+.seat-item-name{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+.seat-item-remove{
+  width:26px; height:26px; border-radius:50%; border:none; background:none; color:var(--muted-2);
+  font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition: all 160ms var(--ease);
+}
+.seat-item-remove:hover{ background:#FDEFEF; color:#D1495B; }
+
+.empty-state{ text-align:center; padding:22px 8px; color:var(--muted-2); font-size:12.5px; }
+
+@media (max-width:980px){
+  .layout{ grid-template-columns:1fr; }
+  .summary-col{ position:static; }
+}
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Seat <b>Selection</b></h1>
+<div class="seat-input-group">
+        <label for="seatLimitInput">Number of passengers</label>
+        <input type="number" id="seatLimitInput" value="0" min="1" max="20">
+</div>
+<div class="layout">
+  <!-- ===== LEFT: PLANE ===== -->
+  <div class="plane-wrap">
+    <div class="plane-shell" id="planeShell">
+      <div class="plane-inner-line"></div>
+      
+      <svg class="plane-nose-svg" viewBox="0 0 330 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="capGrad" x1="0" y1="0" x2="0" y2="190" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#E2E8F0" />
+          </linearGradient>
+          
+          <linearGradient id="windowGrad" x1="0" y1="50" x2="0" y2="130" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#E8EEF5" />
+            <stop offset="100%" stop-color="#B8C8DB" />
+          </linearGradient>
+        </defs>
+        
+        <path d="M 14,185 Q 165,115 316,185 A 131 171 0 0 0 14 185 Z" fill="#F4F7FB" />
+        <path d="M 26,180 Q 165,120 304,180" stroke="#E4E8F0" stroke-width="1.5" fill="none" />
+        <g fill="url(#windowGrad)">
+          <path d="M 160 40 L 115 65 L 160 60 Z" />
+          <path d="M 170 40 L 215 65 L 170 60 Z" />
+
+          <path d="M 130 70 L 105 110 L 130 105 Z" />
+          <path d="M 200 70 L 225 110 L 200 105 Z" />
+
+          <path d="M 110 120 L 85 153 L 105 150 Z" />
+          <path d="M 220 120 L 245 153 L 225 150 Z" />
+        </g>
+      </svg>
+
+      <div class="col-headers">
+        <span>A</span><span>B</span><span>C</span><span></span><span>D</span><span>E</span>
+      </div>
+
+      <div class="seat-grid" id="seatGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT: SUMMARY PANEL ===== -->
+  <div class="summary-col">
+    <div class="card">
+      <div class="flight-icon-badge" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 9L22 12L14 14L12 22L10 14L2 12L10 9Z" fill="currentColor"/></svg>
+      </div>
+      <div class="card-eyebrow"><span>Flight Details</span><span class="sub" id="flightName">Air Commander</span></div>
+
+      <div class="route">
+        <div class="route-point">
+          <div class="route-code" id="fromCode">IDR</div>
+          <div class="route-label">Departure</div>
+        </div>
+        <div class="route-mid">
+          <span class="route-num" id="flightNum">955</span>
+          <div class="route-line"></div>
+          <svg class="route-plane-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12h18M14 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="route-point route-point-end">
+          <div class="route-code" id="toCode">PUN</div>
+          <div class="route-label">Arrival</div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Terminal</div><div class="detail-value" id="terminalVal">T2 / Gate 4</div></div>
+        <div class="detail-item"><div class="detail-label">Boarding</div><div class="detail-value" id="boardingVal">10:10 PM</div></div>
+        <div class="detail-item"><div class="detail-label">Class</div><div class="detail-value">Economy</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="selection-header">
+        <span class="selection-title">Your Selection</span>
+        <span class="seat-badge-count" id="seatCountBadge">0 SEATS</span>
+      </div>
+
+      <div class="legend-row">
+        <span class="legend-item"><i class="legend-dot legend-available"></i>Available</span>
+        <span class="legend-item"><i class="legend-dot legend-selected"></i>Selected</span>
+        <span class="legend-item"><i class="legend-dot legend-booked"></i>Booked</span>
+      </div>
+
+      <div class="selection-list" id="selectionList">
+        <div class="empty-state" id="emptyState">No seats selected yet. Tap a seat on the plane.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+
+  const COLUMNS = ['A','B','C','D','E'];
+  
+  // --- LOAD REAL NAMES FROM PREVIOUS PAGE ---
+  // If no data exists, fall back to a default dummy array
+  let GUEST_NAMES = ['Passenger 1'];
+  const storedNames = localStorage.getItem('passengerNames');
+  if (storedNames) {
+    GUEST_NAMES = JSON.parse(storedNames);
+  }
+
+  let ROWS = 0; 
+  const seatById = new Map();
+  const selectedIds = [];
+  let guestPointer = 0;
+
+  // --- INPUT LIMIT LOGIC (LOCKED) ---
+  const seatLimitInput = $('#seatLimitInput');
+  
+  // Apply the exact passenger count from the details page
+  const storedCount = localStorage.getItem('selectedPassengerCount');
+  if (storedCount) {
+    seatLimitInput.value = storedCount;
+    // Disable the input so it cannot be manually changed!
+    seatLimitInput.disabled = true;
+    seatLimitInput.style.opacity = '0.6';
+    seatLimitInput.style.cursor = 'not-allowed';
+  }
+
+  let maxAllowedSeats = parseInt(seatLimitInput.value, 10);
+
+  seatLimitInput.addEventListener('change', (e) => {
+    let val = parseInt(e.target.value, 10);
+    if (val < 1 || isNaN(val)) { 
+      val = 1; 
+      e.target.value = 1; 
+    }
+    maxAllowedSeats = val;
+
+    if (selectedIds.length > maxAllowedSeats) {
+      alert(`Limit reduced to ${maxAllowedSeats}. Clearing your current selection.`);
+      [...selectedIds].forEach(id => toggleSeat(id)); 
+    }
+  });
+
+  const seatGrid = $('#seatGrid');
+  const selectionList = $('#selectionList');
+  const emptyState = $('#emptyState');
+  const seatCountBadge = $('#seatCountBadge');
+
+  // --- API INTEGRATION ---
+  
+  async function fetchSeats() {
+    try {
+      const response = await fetch('https://brainnetic.in/api/WebCheckIn/GetAllSeats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "flightId": 8,
+          "departureDate": "2026-07-29T00:00:00.000"
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.status === "true" && result.data && result.data.seatDetails) {
+        console.log("Successfully fetched live API data!");
+        processSeats(result.data.seatDetails);
+      } else {
+        console.error("API returned an error or empty data:", result.message);
+        seatGrid.innerHTML = `<div class="empty-state">API error: ${result.message || 'No seat data returned.'}</div>`;
+        // loadMockFallback(); // re-enable temporarily for local UI testing only
+      }
+    } catch (error) {
+      console.error("Failed to fetch seats:", error);
+      seatGrid.innerHTML = `<div class="empty-state">Couldn't load seats. ${error.message || 'Check console for details (likely CORS).'}</div>`;
+      // loadMockFallback(); // re-enable temporarily for local UI testing only
+    }
+  }
+  
+
+  // --- LOCAL DATA INTEGRATION ---
+
+  /*
+  async function fetchSeats() {
+    try {
+      // Point directly to your local file. No POST method or headers needed for a local file read.
+      const response = await fetch('./dummy-data.json'); 
+      const result = await response.json();
+      
+      if (result.status === "true" && result.data && result.data.seatDetails) {
+        console.log("Successfully loaded local JSON data!");
+        processSeats(result.data.seatDetails);
+      } else {
+        console.error("Local data format is incorrect:", result.message);
+        loadMockFallback(); 
+      }
+    } catch (error) {
+      console.error("Failed to load local dummy-data.json", error);
+      loadMockFallback(); 
+    }
+  }
+  */
+
+  // Fallback function mimicking the exact structure of your API
+  function loadMockFallback() {
+    const mockSeats = [];
+    const explicitlyBooked = ['2E', '5C', '5E', '7E', '8D']; // Hardcoded blocked seats to match your old UI
+    
+    for (let r = 1; r <= 11; r++) {
+      COLUMNS.forEach(c => {
+        const seatNum = `${r}${c}`;
+        mockSeats.push({
+          seatNumber: seatNum,
+          rowNo: r,
+          columnNo: c,
+          isBooked: explicitlyBooked.includes(seatNum),
+          isBlocked: false,
+          seatType: "Economy"
+        });
+      });
+    }
+    processSeats(mockSeats);
+  }
+
+  function processSeats(seatDetails) {
+    seatById.clear();
+    let maxRow = 0;
+
+    seatDetails.forEach(seatInfo => {
+      const seatId = seatInfo.seatNumber;
+      if (seatInfo.rowNo > maxRow) maxRow = seatInfo.rowNo;
+
+      seatById.set(seatId, {
+        id: seatId,
+        row: seatInfo.rowNo,
+        col: seatInfo.columnNo, 
+        booked: seatInfo.isBooked || seatInfo.isBlocked, 
+        selected: false,
+        seatType: seatInfo.seatType
+      });
+    });
+
+    ROWS = maxRow; 
+    renderGrid();
+    requestAnimationFrame(() => setTimeout(assemble, 150));
+  }
+
+  /* ---- render seat grid ---- */
+  function renderGrid(){
+    seatGrid.innerHTML = '';
+    for (let row = 1; row <= ROWS; row++){
+      const rowEl = document.createElement('div');
+      rowEl.className = 'seat-row';
+
+      const rowNum = document.createElement('span');
+      rowNum.className = 'row-num';
+      rowNum.textContent = row;
+      rowEl.appendChild(rowNum);
+
+      ['A','B','C'].forEach(c => rowEl.appendChild(seatBtn(row, c)));
+      
+      const gap = document.createElement('span');
+      gap.className = 'aisle-gap';
+      rowEl.appendChild(gap);
+      
+      ['D','E'].forEach(c => rowEl.appendChild(seatBtn(row, c)));
+
+      seatGrid.appendChild(rowEl);
+    }
+  }
+
+  function seatBtn(row, col){
+    const seatId = `${row}${col}`;
+    const seat = seatById.get(seatId);
+    
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    
+    if (!seat) {
+        btn.className = 'seat';
+        btn.style.visibility = 'hidden';
+        btn.disabled = true;
+        return btn;
+    }
+
+    btn.className = 'seat' + (seat.booked ? ' is-booked' : '');
+    btn.dataset.seatId = seat.id;
+    btn.textContent = col;
+    btn.disabled = seat.booked;
+    btn.setAttribute('aria-label', `Seat ${seat.id}${seat.booked ? ', booked' : ', available'}`);
+    return btn;
+  }
+
+  function assemble(){
+    Array.from(seatGrid.querySelectorAll('.seat')).forEach((el,i) => {
+      setTimeout(() => {
+        if(el.style.visibility !== 'hidden') {
+          el.classList.add('is-in');
+          el.style.opacity = '1';
+        }
+      }, 12*i);
+    });
+  }
+
+  /* ---- selection logic ---- */
+  function toggleSeat(id){
+    const seat = seatById.get(id);
+    if (!seat || seat.booked) return;
+    const el = seatGrid.querySelector(`[data-seat-id="${id}"]`);
+    const idx = selectedIds.indexOf(id);
+
+    if (idx === -1){
+      if (selectedIds.length >= maxAllowedSeats) {
+        alert(`You can only select up to ${maxAllowedSeats} seats based on your input.`);
+        return;
+      }
+
+      selectedIds.push(id);
+      seat.selected = true;
+      seat.guest = GUEST_NAMES[guestPointer % GUEST_NAMES.length];
+      guestPointer++;
+      el.classList.add('is-selected');
+      addSeatItem(seat);
+    } else {
+      selectedIds.splice(idx, 1);
+      seat.selected = false;
+      el.classList.remove('is-selected');
+      el.classList.add('is-deselect');
+      setTimeout(() => el.classList.remove('is-deselect'), 260);
+      removeSeatItem(id);
+    }
+    updateCount();
+  }
+
+  function addSeatItem(seat){
+    emptyState.style.display = 'none';
+    const item = document.createElement('div');
+    item.className = 'seat-item';
+    item.dataset.seatId = seat.id;
+    item.innerHTML = `
+      <div class="seat-item-badge">${seat.id}</div>
+      <div class="seat-item-info">
+        <div class="seat-item-class">${seat.seatType || 'Economy'}</div>
+        <div class="seat-item-name">${seat.guest}</div>
+      </div>
+      <button class="seat-item-remove" aria-label="Remove seat ${seat.id}">×</button>
+    `;
+    item.querySelector('.seat-item-remove').addEventListener('click', () => toggleSeat(seat.id));
+    selectionList.appendChild(item);
+  }
+
+  function removeSeatItem(id){
+    const item = selectionList.querySelector(`.seat-item[data-seat-id="${id}"]`);
+    if (!item) return;
+    item.classList.add('is-out');
+    setTimeout(() => {
+      item.remove();
+      if (selectedIds.length === 0) emptyState.style.display = 'block';
+    }, 220);
+  }
+
+  function updateCount(){
+    seatCountBadge.textContent = `${selectedIds.length} SEAT${selectedIds.length === 1 ? '' : 'S'}`;
+    seatCountBadge.style.transform = 'scale(1.12)';
+    setTimeout(() => { seatCountBadge.style.transform = 'scale(1)'; }, 180);
+  }
+
+  seatGrid.addEventListener('click', e => {
+    const btn = e.target.closest('.seat');
+    if (btn && !btn.disabled) toggleSeat(btn.dataset.seatId);
+  });
+
+  /* ---- plane mouse parallax ---- */
+  const planeShell = $('#planeShell');
+  const planeWrap = document.querySelector('.plane-wrap');
+  let raf = null;
+  planeWrap.addEventListener('mousemove', e => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      const rect = planeWrap.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      planeShell.style.transform = `rotateY(${px*6}deg) rotateX(${-py*4}deg) translateY(${py*-4}px)`;
+      raf = null;
+    });
+  });
+  planeWrap.addEventListener('mouseleave', () => {
+    planeShell.style.transform = 'rotateY(0) rotateX(0) translateY(0)';
+  });
+
+  /* ---- boot ---- */
+  fetchSeats();
+
+})();
+</script>
+</body>
+</html>
