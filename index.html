@@ -269,8 +269,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   
   function validatePassengers() {
     const inputs = passengerList.querySelectorAll('input');
+    // Regex: Only allows uppercase/lowercase letters, spaces, hyphens, and apostrophes
+    const nameRegex = /^[A-Za-z\s\-\']+$/; 
+    
     for (let input of inputs) {
-      if (!input.value.trim()) {
+      const val = input.value.trim();
+      
+      if (!val) {
+        alert("Please fill in all passenger names.");
+        input.focus();
+        return false;
+      }
+      
+      if (!nameRegex.test(val)) {
+        alert("Passenger names can only contain letters. Numbers and special characters are not allowed.");
         input.focus();
         return false;
       }
